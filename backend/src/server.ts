@@ -4,11 +4,15 @@ import dotenv from "dotenv";
 import mongoose from "mongoose";
 import swaggerUi from "swagger-ui-express";
 import yaml from "yamljs";
+import http from "http";
+import https from "https";
+import fs from "fs";
 
 dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 5000;
+const HTTPS_PORT =  process.env.HTTPS_PORT || 443;
 
 app.use(cors());
 app.use(express.json());
@@ -21,6 +25,7 @@ import commentRoutes from "./routes/commentRoutes";
 import likeRoutes from "./routes/likeRoutes";
 
 // Swagger Setup
+
 const swaggerDocument = yaml.load("./src/swagger.yaml");
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
@@ -36,13 +41,26 @@ app.use("/api/posts/:postId/comments", commentRoutes);
 app.use("/api/posts/:postId/likes", likeRoutes);
 
 // Database Connection
+console.log(process.env.MONGO_URI)
 const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/cookshare";
 mongoose
   .connect(MONGO_URI)
   .then(() => {
     console.log("Connected to MongoDB!");
-    app.listen(port, () => {
-      console.log(`Server is running on port: ${port}`);
+     if (process.env.NODE_ENV !== "production") {
+      console.log("Running in development mode (HTTP)");
+      http.createServer(app).listen(port, () => {
+        console.log(`HTTP Server running on port: ${port}`);
+      });
+    } else {
+    // HTTPS
+    const options = {
+      key: fs.readFileSync("./client-key.pem"),
+      cert: fs.readFileSync("./client-cert.pem"),
+    };
+
+    https.createServer(options, app).listen(HTTPS_PORT, () => {
+      console.log(`HTTPS Server running on port: ${HTTPS_PORT}`);
     });
   })
   .catch((err) => {
