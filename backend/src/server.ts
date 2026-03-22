@@ -62,7 +62,7 @@ mongoose
     https.createServer(options, app).listen(HTTPS_PORT, () => {
       console.log(`HTTPS Server running on port: ${HTTPS_PORT}`);
     });
-  })
+  }})
   .catch((err) => {
     console.error("Failed to connect to MongoDB", err);
   });
