@@ -142,7 +142,7 @@ const Profile = () => {
         />
         <div className="relative group cursor-pointer mb-4" onClick={() => fileInputRef.current?.click()}>
           <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-rose-400 to-orange-400 p-[3px]">
-            <img src={profile.profilePic ? `http://localhost:5000/uploads/${profile.profilePic}` : 'https://via.placeholder.com/150'} alt="Profile" className="w-full h-full rounded-full object-cover border-4 border-white bg-white" />
+            <img src={profile.profilePic ? `${import.meta.env.VITE_API_URL}/uploads/${profile.profilePic}` : 'https://via.placeholder.com/150'} alt="Profile" className="w-full h-full rounded-full object-cover border-4 border-white bg-white" />
           </div>
           <div className="absolute inset-0 bg-black bg-opacity-40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
             <FiEdit2 className="text-white" size={24} />
@@ -182,7 +182,7 @@ const Profile = () => {
           {posts.map(post => (
             <div key={post._id} className="aspect-square bg-gray-200 group relative">
               {post.image ? (
-                <img src={`http://localhost:5000/uploads/${post.image}`} alt="Post" className="w-full h-full object-cover" />
+                <img src={`${import.meta.env.VITE_API_URL}/uploads/${post.image}`} alt="Post" className="w-full h-full object-cover" />
               ) : (
                  <div className="w-full h-full flex items-center justify-center p-2 text-xs text-center text-gray-500 leading-tight bg-white border border-gray-100">{post.text.substring(0, 50)}...</div>
               )}
@@ -239,7 +239,7 @@ const Profile = () => {
                 {editingPostImage ? (
                   <img src={URL.createObjectURL(editingPostImage)} alt="Preview" className="w-full h-full object-cover" />
                 ) : editingPost.image ? (
-                  <img src={`http://localhost:5000/uploads/${editingPost.image}`} alt="Current" className="w-full h-full object-cover" />
+                  <img src={`${import.meta.env.VITE_API_URL}/uploads/${editingPost.image}`} alt="Current" className="w-full h-full object-cover" />
                 ) : (
                   <>
                     <FiPlus size={24} className="mb-2" />

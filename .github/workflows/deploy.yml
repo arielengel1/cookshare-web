@@ -1,0 +1,45 @@
+name: Deploy to Remote Server
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup VPN
+        uses: golfzapt/setup-openvpn@v1
+        with:
+          configFile: ${{ secrets.VPN_CONFIG }}
+          username: ${{ secrets.VPN_USERNAME }}
+          password: ${{ secrets.VPN_PASSWORD }}
+
+      - name: Build Docker image
+        run: docker build -t cookshare-web .
+
+      - name: Save Docker image
+        run: docker save cookshare-web | gzip > cookshare-web.tar.gz
+
+      - name: Deploy to remote server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          password: ${{ secrets.DEPLOY_PASSWORD }}
+          port: 22
+          script: |
+            # Stop and remove existing container if running
+            docker stop cookshare-web || true
+            docker rm cookshare-web || true
+            # Remove old image if exists
+            docker rmi cookshare-web || true
+            # Load new image
+            docker load < cookshare-web.tar.gz
+            # Run the container
+            docker run -d --name cookshare-web -p 5000:5000 cookshare-web
+            # Clean up
+            rm cookshare-web.tar.gz
