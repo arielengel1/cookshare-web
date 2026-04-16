@@ -30,6 +30,8 @@ import likeRoutes from "./routes/likeRoutes";
 const swaggerDocument = yaml.load("./src/swagger.yaml");
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
+app.get("/api/health", (_req, res) => res.json({ status: "ok" }));
+
 app.use("/api/auth", authRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/posts", postRoutes);
