@@ -7,7 +7,7 @@
     "start": "node dist/server.js",
     "dev": "nodemon --signal SIGKILL src/server.ts",
     "build": "tsc",
-    "prod": "cp .env.prod .env && cd ../frontend && npm run build && rm -rf ../backend/public && cp -r dist ../backend/public && cd ../backend && tsc -p tsconfig_prod.json && pm2 restart ecosystem.config.js --env production",
+    "prod": "cp .env.prod .env && cd ../frontend && npm run build && cd ../backend && tsc -p tsconfig_prod.json && rm -rf dist/public && cp -r ../frontend/dist dist/public && pm2 restart ecosystem.config.js --env production",
     "prod_cmd": "tsc -p tsconfig_prod.json && pm2 restart ecosystem.config.js --env production",
     "test": "jest",
     "lint": "eslint src/**/*.ts",
