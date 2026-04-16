@@ -15,11 +15,6 @@ const app = express();
 const port = process.env.PORT || 5000;
 const HTTPS_PORT =  process.env.HTTPS_PORT || 443;
 
-app.use(express.static(path.join(__dirname, "../public")));
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public', 'index.html'));
-});
-
 app.use(cors());
 app.use(express.json());
 app.use("/uploads", express.static("uploads"));
@@ -35,19 +30,19 @@ import likeRoutes from "./routes/likeRoutes";
 const swaggerDocument = yaml.load("./src/swagger.yaml");
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
-// Basic Route
-app.get("/", (req, res) => {
-  res.send("CookShare API is running!");
-});
-
 app.use("/api/auth", authRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/posts", postRoutes);
 app.use("/api/posts/:postId/comments", commentRoutes);
 app.use("/api/posts/:postId/likes", likeRoutes);
 
+// Static frontend — after API routes so /api/* is not caught
+app.use(express.static(path.join(__dirname, "../public")));
+app.get('*', (_req, res) => {
+  res.sendFile(path.join(__dirname, '../public', 'index.html'));
+});
+
 // Database Connection
-console.log(process.env.MONGO_URI)
 const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/cookshare";
 mongoose
   .connect(MONGO_URI)
@@ -68,7 +63,8 @@ mongoose
     https.createServer(options, app).listen(HTTPS_PORT, () => {
       console.log(`HTTPS Server running on port: ${HTTPS_PORT}`);
     });
-  }})
+  }
+  })
   .catch((err) => {
     console.error("Failed to connect to MongoDB", err);
   });
