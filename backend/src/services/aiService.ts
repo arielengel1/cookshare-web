@@ -17,22 +17,11 @@ export const generateEmbedding = async (text: string): Promise<number[] | null> 
   }
   try {
     const response = await aiClient.models.embedContent({
-      model: 'text-embedding-001',
+      model: 'gemini-embedding-001',
       contents: text,
     });
     return response.embeddings?.[0]?.values || null;
   } catch (error: any) {
-    if (error?.status === 404 || error?.message?.includes('not found')) {
-      try {
-        const fallbackResponse = await aiClient.models.embedContent({
-          model: 'embedding-001',
-          contents: text,
-        });
-        return fallbackResponse.embeddings?.[0]?.values || null;
-      } catch (fallbackError) {
-        console.error("Gemini API Fallback Error:", fallbackError);
-      }
-    }
     console.error("Gemini API Error:", error);
     return null;
   }

@@ -50,22 +50,27 @@ mongoose
   .connect(MONGO_URI)
   .then(() => {
     console.log("Connected to MongoDB!");
-     if (process.env.NODE_ENV !== "production") {
+
+    let server: http.Server | https.Server;
+
+    if (process.env.NODE_ENV !== "production") {
       console.log("Running in development mode (HTTP)");
-      http.createServer(app).listen(port, () => {
+      server = http.createServer(app).listen(port, () => {
         console.log(`HTTP Server running on port: ${port}`);
       });
     } else {
-    // HTTPS
-    const options = {
-      key: fs.readFileSync("./client-key.pem"),
-      cert: fs.readFileSync("./client-cert.pem"),
-    };
+      const options = {
+        key: fs.readFileSync("./client-key.pem"),
+        cert: fs.readFileSync("./client-cert.pem"),
+      };
+      server = https.createServer(options, app).listen(HTTPS_PORT, () => {
+        console.log(`HTTPS Server running on port: ${HTTPS_PORT}`);
+      });
+    }
 
-    https.createServer(options, app).listen(HTTPS_PORT, () => {
-      console.log(`HTTPS Server running on port: ${HTTPS_PORT}`);
+    process.on("SIGTERM", () => {
+      server.close(() => process.exit(0));
     });
-  }
   })
   .catch((err) => {
     console.error("Failed to connect to MongoDB", err);

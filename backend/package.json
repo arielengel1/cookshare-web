@@ -5,7 +5,7 @@
   "main": "dist/server.js",
   "scripts": {
     "start": "node dist/server.js",
-    "dev": "nodemon --signal SIGKILL src/server.ts",
+    "dev": "nodemon src/server.ts",
     "build": "tsc",
     "prod": "cp .env.prod .env && cd ../frontend && npm run build && cd ../backend && tsc -p tsconfig_prod.json && rm -rf dist/public && cp -r ../frontend/dist dist/public && pm2 restart ecosystem.config.js --env production",
     "prod_cmd": "tsc -p tsconfig_prod.json && pm2 restart ecosystem.config.js --env production",

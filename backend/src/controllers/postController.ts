@@ -19,17 +19,11 @@ export const createPost = async (req: AuthRequest, res: Response) => {
     // AI Indexing
     if (text) {
       const chunks = chunkText(text);
-      for (let i = 0; i < chunks.length; i++) {
-        const embedding = await generateEmbedding(chunks[i]);
-        if (embedding) {
-          await Chunk.create({
-            docId: post._id.toString(),
-            chunkIndex: i,
-            text: chunks[i],
-            embedding,
-          });
-        }
-      }
+      const embeddings = await Promise.all(chunks.map(c => generateEmbedding(c)));
+      const docs = chunks
+        .map((t, i) => ({ docId: post._id.toString(), chunkIndex: i, text: t, embedding: embeddings[i] }))
+        .filter(d => d.embedding);
+      if (docs.length) await Chunk.insertMany(docs);
     }
 
     res.status(201).json(post);
@@ -68,17 +62,11 @@ export const updatePost = async (req: AuthRequest, res: Response) => {
     if (text) {
       await Chunk.deleteMany({ docId: post._id.toString() });
       const chunks = chunkText(text);
-      for (let i = 0; i < chunks.length; i++) {
-        const embedding = await generateEmbedding(chunks[i]);
-        if (embedding) {
-          await Chunk.create({
-            docId: post._id.toString(),
-            chunkIndex: i,
-            text: chunks[i],
-            embedding,
-          });
-        }
-      }
+      const embeddings = await Promise.all(chunks.map(c => generateEmbedding(c)));
+      const docs = chunks
+        .map((t, i) => ({ docId: post._id.toString(), chunkIndex: i, text: t, embedding: embeddings[i] }))
+        .filter(d => d.embedding);
+      if (docs.length) await Chunk.insertMany(docs);
     }
 
     res.json(post);
@@ -111,7 +99,7 @@ export const smartSearch = async (req: AuthRequest, res: Response) => {
     const queryEmbedding = await generateEmbedding(query);
     if (!queryEmbedding) return res.status(500).json({ message: 'Failed to generate embedding' });
 
-    const allChunks = await Chunk.find({ embedding: { $exists: true, $ne: [] } });
+    const allChunks = await Chunk.find({ embedding: { $exists: true, $ne: [] } }, { docId: 1, embedding: 1 }).lean();
     
     // Calculate similarities
     const results = allChunks.map(chunk => ({
