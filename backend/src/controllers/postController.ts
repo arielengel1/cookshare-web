@@ -19,7 +19,7 @@ export const createPost = async (req: AuthRequest, res: Response) => {
     // AI Indexing
     if (text) {
       const chunks = chunkText(text);
-      const embeddings = await Promise.all(chunks.map(c => generateEmbedding(c)));
+      const embeddings = await Promise.all(chunks.map(c => generateEmbedding(c, 'RETRIEVAL_DOCUMENT')));
       const docs = chunks
         .map((t, i) => ({ docId: post._id.toString(), chunkIndex: i, text: t, embedding: embeddings[i] }))
         .filter(d => d.embedding);
@@ -62,7 +62,7 @@ export const updatePost = async (req: AuthRequest, res: Response) => {
     if (text) {
       await Chunk.deleteMany({ docId: post._id.toString() });
       const chunks = chunkText(text);
-      const embeddings = await Promise.all(chunks.map(c => generateEmbedding(c)));
+      const embeddings = await Promise.all(chunks.map(c => generateEmbedding(c, 'RETRIEVAL_DOCUMENT')));
       const docs = chunks
         .map((t, i) => ({ docId: post._id.toString(), chunkIndex: i, text: t, embedding: embeddings[i] }))
         .filter(d => d.embedding);
@@ -96,7 +96,7 @@ export const smartSearch = async (req: AuthRequest, res: Response) => {
     const { query } = req.query;
     if (!query || typeof query !== 'string') return res.status(400).json({ message: 'Query required' });
 
-    const queryEmbedding = await generateEmbedding(query);
+    const queryEmbedding = await generateEmbedding(query, 'RETRIEVAL_QUERY');
     if (!queryEmbedding) return res.status(500).json({ message: 'Failed to generate embedding' });
 
     const allChunks = await Chunk.find({ embedding: { $exists: true, $ne: [] } }, { docId: 1, embedding: 1 }).lean();
@@ -107,19 +107,31 @@ export const smartSearch = async (req: AuthRequest, res: Response) => {
       similarity: cosineSimilarity(queryEmbedding, chunk.embedding)
     }))
     .sort((a, b) => b.similarity - a.similarity)
-    .filter(res => res.similarity > 0.4) // Threshold
+    .filter(res => res.similarity > 0.4)
     .slice(0, 10);
 
     // Get unique matched post IDs
     const matchedDocIds = [...new Set(results.map(r => r.docId))];
     const posts = await Post.find({ _id: { $in: matchedDocIds } }).populate('author', 'name profilePic');
     
+    // Build a map from docId to best similarity score
+    const similarityMap = new Map<string, number>();
+    for (const r of results) {
+      const existing = similarityMap.get(r.docId.toString());
+      if (existing === undefined || r.similarity > existing) {
+        similarityMap.set(r.docId.toString(), r.similarity);
+      }
+    }
+
     // Sort posts to match search priority
     const sortedPosts = posts.sort((a, b) => {
       const indexA = matchedDocIds.indexOf(a._id.toString());
       const indexB = matchedDocIds.indexOf(b._id.toString());
       return indexA - indexB;
-    });
+    }).map(post => ({
+      ...post.toObject(),
+      similarity: similarityMap.get(post._id.toString()) ?? 0
+    }));
 
     res.json(sortedPosts);
   } catch (error) {
