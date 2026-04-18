@@ -46,6 +46,7 @@ Thumbs.db
 
 # Project specific
 backend/uploads/
+backend/public/
 backend/coverage/
 frontend/coverage/
 
