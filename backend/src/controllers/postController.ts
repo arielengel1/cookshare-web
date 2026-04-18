@@ -17,16 +17,21 @@ export const createPost = async (req: AuthRequest, res: Response) => {
     await post.save();
 
     // AI Indexing
+    let embeddingWarning = false;
     if (text) {
-      const chunks = chunkText(text);
-      const embeddings = await Promise.all(chunks.map(c => generateEmbedding(c, 'RETRIEVAL_DOCUMENT')));
-      const docs = chunks
-        .map((t, i) => ({ docId: post._id.toString(), chunkIndex: i, text: t, embedding: embeddings[i] }))
-        .filter(d => d.embedding);
-      if (docs.length) await Chunk.insertMany(docs);
+      try {
+        const chunks = chunkText(text);
+        const embeddings = await Promise.all(chunks.map(c => generateEmbedding(c, 'RETRIEVAL_DOCUMENT')));
+        const docs = chunks
+          .map((t, i) => ({ docId: post._id.toString(), chunkIndex: i, text: t, embedding: embeddings[i] }))
+          .filter(d => d.embedding);
+        if (docs.length) await Chunk.insertMany(docs);
+      } catch {
+        embeddingWarning = true;
+      }
     }
 
-    res.status(201).json(post);
+    res.status(201).json({ ...post.toObject(), embeddingWarning });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error });
   }
@@ -59,17 +64,22 @@ export const updatePost = async (req: AuthRequest, res: Response) => {
     await post.save();
 
     // Re-index AI Chunks
+    let embeddingWarning = false;
     if (text) {
-      await Chunk.deleteMany({ docId: post._id.toString() });
-      const chunks = chunkText(text);
-      const embeddings = await Promise.all(chunks.map(c => generateEmbedding(c, 'RETRIEVAL_DOCUMENT')));
-      const docs = chunks
-        .map((t, i) => ({ docId: post._id.toString(), chunkIndex: i, text: t, embedding: embeddings[i] }))
-        .filter(d => d.embedding);
-      if (docs.length) await Chunk.insertMany(docs);
+      try {
+        await Chunk.deleteMany({ docId: post._id.toString() });
+        const chunks = chunkText(text);
+        const embeddings = await Promise.all(chunks.map(c => generateEmbedding(c, 'RETRIEVAL_DOCUMENT')));
+        const docs = chunks
+          .map((t, i) => ({ docId: post._id.toString(), chunkIndex: i, text: t, embedding: embeddings[i] }))
+          .filter(d => d.embedding);
+        if (docs.length) await Chunk.insertMany(docs);
+      } catch {
+        embeddingWarning = true;
+      }
     }
 
-    res.json(post);
+    res.json({ ...post.toObject(), embeddingWarning });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error });
   }
@@ -96,7 +106,16 @@ export const smartSearch = async (req: AuthRequest, res: Response) => {
     const { query } = req.query;
     if (!query || typeof query !== 'string') return res.status(400).json({ message: 'Query required' });
 
-    const queryEmbedding = await generateEmbedding(query, 'RETRIEVAL_QUERY');
+    let queryEmbedding: number[] | null = null;
+    try {
+      queryEmbedding = await generateEmbedding(query, 'RETRIEVAL_QUERY');
+    } catch (embErr: any) {
+      return res.status(500).json({
+        message: 'Failed to generate embedding',
+        error: embErr?.message || String(embErr),
+        details: embErr?.errorDetails || embErr?.status || undefined,
+      });
+    }
     if (!queryEmbedding) return res.status(500).json({ message: 'Failed to generate embedding' });
 
     const allChunks = await Chunk.find({ embedding: { $exists: true, $ne: [] } }, { docId: 1, embedding: 1 }).lean();

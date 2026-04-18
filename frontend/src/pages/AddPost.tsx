@@ -9,6 +9,7 @@ const AddPost = () => {
   const [image, setImage] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [warnMsg, setWarnMsg] = useState('');
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -28,12 +29,15 @@ const AddPost = () => {
       formData.append('text', text);
       if (image) formData.append('image', image);
 
-      await axiosClient.post('/posts', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
+      const { data } = await axiosClient.post('/posts', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
       });
-      navigate('/');
+      if (data.embeddingWarning) {
+        setWarnMsg('השמירה הצליחה אך עקב בעיה טכנית הפוסט לא יופיע בחיפוש');
+        setTimeout(() => navigate('/'), 3000);
+      } else {
+        navigate('/');
+      }
     } catch (error) {
       console.error('Error creating post', error);
     } finally {
@@ -79,6 +83,12 @@ const AddPost = () => {
           {loading ? 'Publishing...' : <><FiUpload /> Publish Recipe</>}
         </button>
       </form>
+
+      {warnMsg && (
+        <div className="fixed bottom-[80px] left-1/2 -translate-x-1/2 bg-gray-800 text-white px-4 py-2 rounded-full text-sm font-medium z-50 animate-bounce whitespace-nowrap">
+          {warnMsg}
+        </div>
+      )}
     </div>
   );
 };

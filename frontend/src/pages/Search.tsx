@@ -7,6 +7,7 @@ const Search = () => {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   const handleLike = async (postId: string) => {
@@ -27,11 +28,15 @@ const Search = () => {
     if (!query.trim()) return;
     
     setLoading(true);
+    setSearchError(null);
     try {
       const { data } = await axiosClient.get(`/posts/search?query=${encodeURIComponent(query)}`);
       setResults(data);
-    } catch (error) {
-      console.error('Search error', error);
+    } catch (error: any) {
+      const errData = error?.response?.data;
+      const msg = errData?.error || errData?.message || 'שגיאה בחיפוש';
+      const details = errData?.details ? ` (${JSON.stringify(errData.details)})` : '';
+      setSearchError(msg + details);
     } finally {
       setLoading(false);
     }
@@ -56,6 +61,8 @@ const Search = () => {
       <div className="mt-4">
         {loading ? (
           <div className="flex justify-center p-10"><div className="animate-pulse flex space-x-2"><div className="h-3 w-3 bg-rose-400 rounded-full"></div><div className="h-3 w-3 bg-rose-400 rounded-full"></div><div className="h-3 w-3 bg-rose-400 rounded-full"></div></div></div>
+        ) : searchError ? (
+          <div className="text-center p-6 text-red-500 text-sm break-words">{searchError}</div>
         ) : results.length > 0 ? (
           <div className="flex flex-col gap-6">
             <h2 className="font-bold text-gray-700 ml-1">AI Matches</h2>

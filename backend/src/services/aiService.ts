@@ -27,7 +27,7 @@ export const generateEmbedding = async (
     return response.embeddings?.[0]?.values || null;
   } catch (error: any) {
     console.error("Gemini API Error:", error);
-    return null;
+    throw error;
   }
 };
 
