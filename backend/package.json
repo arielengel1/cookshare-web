@@ -7,12 +7,16 @@
     "start": "node dist/server.js",
     "dev": "nodemon src/server.ts",
     "build": "tsc",
+    "prod": "cp .env.prod .env && cd ../frontend && npm run build && cd ../backend && tsc -p tsconfig_prod.json && rm -rf dist/public && cp -r ../frontend/dist dist/public && pm2 restart ecosystem.config.js --env production",
+    "prod_cmd": "tsc -p tsconfig_prod.json && pm2 restart ecosystem.config.js --env production",
+    "seed": "ts-node src/seed.ts",
     "test": "jest",
     "lint": "eslint src/**/*.ts",
     "format": "prettier --write \"src/**/*.ts\""
   },
   "dependencies": {
     "@google/genai": "*",
+    "@modelcontextprotocol/sdk": "^0.4.0",
     "bcrypt": "^5.1.1",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
@@ -20,6 +24,7 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.3.4",
     "multer": "^1.4.5-lts.1",
+    "supertest": "^7.2.2",
     "swagger-ui-express": "^5.0.0",
     "yamljs": "^0.3.0"
   },

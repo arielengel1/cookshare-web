@@ -69,7 +69,7 @@ const Search = () => {
              
              {post.image && (
                <div className="w-full bg-gray-100">
-                 <img src={`http://localhost:5000/uploads/${post.image}`} alt="Recipe" className="w-full h-auto object-cover max-h-64" />
+                 <img src={`${import.meta.env.VITE_API_URL}/uploads/${post.image}`} alt="Recipe" className="w-full h-auto object-cover max-h-64" />
                </div>
              )}
              

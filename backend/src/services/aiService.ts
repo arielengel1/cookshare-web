@@ -2,7 +2,10 @@ import { GoogleGenAI } from '@google/genai';
 
 let aiClient: GoogleGenAI | null = null;
 
-export const generateEmbedding = async (text: string): Promise<number[] | null> => {
+export const generateEmbedding = async (
+  text: string,
+  taskType: 'RETRIEVAL_DOCUMENT' | 'RETRIEVAL_QUERY' = 'RETRIEVAL_DOCUMENT'
+): Promise<number[] | null> => {
   if (!aiClient) {
     try {
       if (process.env.GEMINI_API_KEY) {
@@ -17,28 +20,18 @@ export const generateEmbedding = async (text: string): Promise<number[] | null> 
   }
   try {
     const response = await aiClient.models.embedContent({
-      model: 'text-embedding-001',
+      model: 'gemini-embedding-001',
       contents: text,
+      config: { taskType },
     });
     return response.embeddings?.[0]?.values || null;
   } catch (error: any) {
-    if (error?.status === 404 || error?.message?.includes('not found')) {
-      try {
-        const fallbackResponse = await aiClient.models.embedContent({
-          model: 'embedding-001',
-          contents: text,
-        });
-        return fallbackResponse.embeddings?.[0]?.values || null;
-      } catch (fallbackError) {
-        console.error("Gemini API Fallback Error:", fallbackError);
-      }
-    }
     console.error("Gemini API Error:", error);
     return null;
   }
 };
 
-export const chunkText = (text: string, maxChars = 800, overlap = 100): string[] => {
+export const chunkText = (text: string, maxChars = 50, overlap = 25): string[] => {
   const chunks: string[] = [];
   let i = 0;
   while (i < text.length) {

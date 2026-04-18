@@ -1,9 +1,9 @@
 module.exports = {
   apps : [{
-    name   : "REST SERVER",
+    name   : "cookshare-backend",
     script : "./dist/src/server.js",
     env_production : {
-       NODE_ENV: "production"
+      NODE_ENV: "production"
     }
   }]
 }

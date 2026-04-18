@@ -49,7 +49,7 @@ const Home = () => {
             <div key={post._id} className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
               <div className="p-4 flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-rose-400 to-orange-400 p-[2px]">
-                  <img src={post.author?.profilePic ? `http://localhost:5000/uploads/${post.author.profilePic}` : "https://via.placeholder.com/150"} alt="Avatar" className="w-full h-full rounded-full object-cover border-2 border-white" />
+                  <img src={post.author?.profilePic ? `${import.meta.env.VITE_API_URL}/uploads/${post.author.profilePic}` : "https://via.placeholder.com/150"} alt="Avatar" className="w-full h-full rounded-full object-cover border-2 border-white" />
                 </div>
                 <div>
                   <div className="font-bold text-sm tracking-tight">{post.author?.name || 'Unknown'}</div>
@@ -59,7 +59,7 @@ const Home = () => {
               
               {post.image && (
                 <div className="w-full bg-gray-100">
-                  <img src={`http://localhost:5000/uploads/${post.image}`} alt="Recipe" className="w-full h-auto object-cover max-h-96" />
+                  <img src={`${import.meta.env.VITE_API_URL}/uploads/${post.image}`} alt="Recipe" className="w-full h-auto object-cover max-h-96" />
                 </div>
               )}
               

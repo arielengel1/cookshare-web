@@ -58,7 +58,7 @@ const Comments = () => {
             comments.map((comment) => (
               <div key={comment._id} className="flex gap-3">
                 <div className="w-8 h-8 rounded-full bg-gray-200 shrink-0">
-                  <img src={comment.author?.profilePic ? `http://localhost:5000/uploads/${comment.author.profilePic}` : "https://via.placeholder.com/150"} alt="User" className="w-full h-full rounded-full object-cover" />
+                  <img src={comment.author?.profilePic ? `${import.meta.env.VITE_API_URL}/uploads/${comment.author.profilePic}` : "https://via.placeholder.com/150"} alt="User" className="w-full h-full rounded-full object-cover" />
                 </div>
                 <div>
                   <div className="flex items-baseline gap-2">
