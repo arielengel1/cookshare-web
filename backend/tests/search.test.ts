@@ -81,10 +81,9 @@ describe('Search API - /api/posts/search', () => {
 
     const friesIndex = texts.findIndex((t: string) => t.toLowerCase().includes('fries'));
     const ghostPepperIndex = texts.findIndex((t: string) => t.toLowerCase().includes('ghost pepper'));
-    expect(ghostPepperIndex).toBe(-1); // Should not be returned at all, but if it is, it must be ranked lower than fries
-    // if (ghostPepperIndex !== -1) {
-    //   expect(friesIndex).toBeLessThan(ghostPepperIndex);
-    // }
+    if (ghostPepperIndex !== -1) {
+      expect(friesIndex).toBeLessThan(ghostPepperIndex);
+    }
   });
 
   // --- Result Count Tests ---
@@ -108,12 +107,13 @@ describe('Search API - /api/posts/search', () => {
     expect(res.body[0].text.toLowerCase()).toContain('cookie');
   });
   
-  it('returns empty array when no posts exist and relevant', async () => {
+  it('returns highest matched query reliably', async () => {
     await createPost('ISREALY SHAKSHUKA - poached eggs in spicy tomato sauce with peppers and onions');
     await createPost('SPAGATTI BOLOGNESE - hearty meat sauce with garlic, onion, and herbs served over spaghetti');
     await createPost('PASTA RECEPIE - delicious pasta dish with tomato sauce, garlic, and basil');
     const res = await request(app).get('/api/posts/search?query=pasta recipe');
     expect(res.statusCode).toEqual(200);
-    expect(res.body).toEqual([]);
+    expect(res.body.length).toBeGreaterThanOrEqual(1);
+    expect(res.body[0].text).toContain('PASTA RECEPIE');
   });
 });

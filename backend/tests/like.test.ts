@@ -2,6 +2,7 @@ import express from 'express';
 import request from 'supertest';
 import mongoose from 'mongoose';
 import postRoutes from '../src/routes/postRoutes';
+import likeRoutes from '../src/routes/likeRoutes';
 import User from '../src/models/User';
 import Post from '../src/models/Post';
 import Like from '../src/models/Like';
@@ -10,6 +11,7 @@ import jwt from 'jsonwebtoken';
 const app = express();
 app.use(express.json());
 app.use('/api/posts', postRoutes);
+app.use('/api/posts/:postId/likes', likeRoutes);
 
 describe('Like API Unit Tests', () => {
   let token: string;
@@ -36,7 +38,7 @@ describe('Like API Unit Tests', () => {
     const user = new User({ email: 'test@test.com', password: 'password', name: 'Test User' });
     await user.save();
     userId = user._id.toString();
-    token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET as string, { expiresIn: '1h' });
 
     const post = new Post({ author: userId, text: 'Post to like' });
     await post.save();

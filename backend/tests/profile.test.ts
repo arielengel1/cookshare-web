@@ -35,7 +35,7 @@ describe('Profile API Unit Tests', () => {
     const user = new User({ email: 'test@test.com', password: 'password', name: 'Test User' });
     await user.save();
     userId = user._id.toString();
-    token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET as string, { expiresIn: '1h' });
   });
 
   it('should fetch liked posts', async () => {

@@ -10,7 +10,7 @@
     "prod": "cp .env.prod .env && cd ../frontend && npm run build && cd ../backend && tsc -p tsconfig_prod.json && rm -rf dist/public && cp -r ../frontend/dist dist/public && pm2 restart ecosystem.config.js --env production",
     "prod_cmd": "tsc -p tsconfig_prod.json && pm2 restart ecosystem.config.js --env production",
     "seed": "ts-node src/seed.ts",
-    "test": "jest",
+    "test": "jest --runInBand",
     "lint": "eslint src/**/*.ts",
     "format": "prettier --write \"src/**/*.ts\""
   },

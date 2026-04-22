@@ -33,7 +33,7 @@ describe('Post API Unit Tests', () => {
     const user = new User({ email: 'test@test.com', password: 'password', name: 'Test User' });
     await user.save();
     userId = user._id.toString();
-    token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET as string, { expiresIn: '1h' });
   });
 
   it('should create a new post', async () => {
@@ -41,7 +41,7 @@ describe('Post API Unit Tests', () => {
       .post('/api/posts')
       .set('Authorization', `Bearer ${token}`)
       .send({ text: 'A wild recipe appears' });
-    
+    console.log("POST RES:", res.body);
     expect(res.statusCode).toEqual(201);
     expect(res.body).toHaveProperty('text', 'A wild recipe appears');
   });
