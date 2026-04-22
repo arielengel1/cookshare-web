@@ -13,6 +13,8 @@ const Comments = () => {
 
   useEffect(() => {
     fetchComments();
+    const mainDiv = document.querySelector('main');
+    if (mainDiv) mainDiv.scrollTo({ top: 0, behavior: 'smooth' });
   }, [id]);
 
   const fetchComments = async () => {

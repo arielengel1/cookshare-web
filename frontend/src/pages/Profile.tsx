@@ -14,6 +14,7 @@ const Profile = () => {
   const [editingPostText, setEditingPostText] = useState('');
   const [editingPostImage, setEditingPostImage] = useState<File | null>(null);
   const [deletingPost, setDeletingPost] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState<'posts'|'likes'>('posts');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const editFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -105,13 +106,13 @@ const Profile = () => {
 
   useEffect(() => {
     fetchProfileAndPosts();
-  }, []);
+  }, [activeTab]);
 
   const fetchProfileAndPosts = async () => {
     try {
       const { data } = await axiosClient.get('/profile');
       setProfile(data);
-      const postsRes = await axiosClient.get(`/profile/${data._id}/posts`);
+      const postsRes = await axiosClient.get(`/profile/${data._id}/${activeTab === 'posts' ? 'posts' : 'liked-posts'}`);
       setPosts(postsRes.data);
       setNewName(data.name);
     } catch (error) {
@@ -177,7 +178,20 @@ const Profile = () => {
       </div>
 
       <div className="p-1">
-        <h3 className="p-3 text-sm font-bold text-gray-400 tracking-wider uppercase text-center bg-white sticky top-0 z-10 border-b border-gray-100">Recipes</h3>
+        <div className="grid grid-cols-2 text-sm font-bold text-gray-400 tracking-wider uppercase text-center bg-white sticky top-0 z-10 border-b border-gray-100">
+          <button 
+            className={`p-3 transition-colors ${activeTab === 'posts' ? 'text-rose-500 border-b-2 border-rose-500' : 'hover:text-gray-600'}`}
+            onClick={() => setActiveTab('posts')}
+          >
+            My Recipes
+          </button>
+          <button 
+            className={`p-3 transition-colors ${activeTab === 'likes' ? 'text-rose-500 border-b-2 border-rose-500' : 'hover:text-gray-600'}`}
+            onClick={() => setActiveTab('likes')}
+          >
+            Liked Recipes
+          </button>
+        </div>
         <div className="grid grid-cols-3 gap-1 mt-1">
           {posts.map(post => (
             <div key={post._id} className="aspect-square bg-gray-200 group relative">
@@ -187,7 +201,7 @@ const Profile = () => {
                  <div className="w-full h-full flex items-center justify-center p-2 text-xs text-center text-gray-500 leading-tight bg-white border border-gray-100">{post.text.substring(0, 50)}...</div>
               )}
               
-              <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
+              <div className="absolute inset-0 bg-black/30 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
                 <button onClick={() => { setEditingPost(post); setEditingPostText(post.text); setEditingPostImage(null); }} className="p-2 bg-white rounded-full text-blue-500 hover:scale-110 transition-transform">
                   <FiEdit size={18} />
                 </button>
@@ -210,7 +224,7 @@ const Profile = () => {
 
       {/* Custom Delete Confirmation Modal */}
       {deletingPost && (
-        <div className="fixed inset-0 bg-gray-900 bg-opacity-40 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all">
+        <div className="fixed inset-0 bg-gray-900/20 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all">
           <div className="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl transform scale-100 transition-transform">
             <div className="w-12 h-12 rounded-full bg-rose-100 text-rose-500 flex items-center justify-center mx-auto mb-4">
               <FiTrash2 size={24} />
@@ -227,7 +241,7 @@ const Profile = () => {
 
       {/* Edit Recipe Modal */}
       {editingPost && (
-        <div className="fixed inset-0 bg-gray-900 bg-opacity-40 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all">
+        <div className="fixed inset-0 bg-gray-900/20 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all">
           <div className="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl">
             <h3 className="font-bold text-lg mb-4 tracking-tight">Edit Recipe</h3>
             

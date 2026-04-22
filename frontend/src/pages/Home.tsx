@@ -29,7 +29,7 @@ const Home = () => {
       const { data } = await axiosClient.post(`/posts/${postId}/likes`);
       setPosts(posts.map(p => {
         if (p._id === postId) {
-          return {...p, likesCount: p.likesCount + (data.liked ? 1 : -1)};
+          return {...p, likesCount: p.likesCount + (data.liked ? 1 : -1), isLiked: data.liked};
         }
         return p;
       }));
@@ -66,7 +66,7 @@ const Home = () => {
               <div className="p-4">
                 <div className="flex gap-4 mb-3">
                   <button onClick={() => handleLike(post._id)} className="flex items-center gap-1.5 hover:text-rose-500 transition-colors">
-                    <FiHeart size={24} className={post.likesCount ? 'fill-rose-500 text-rose-500' : ''}/>
+                    <FiHeart size={24} className={post.isLiked ? 'fill-rose-500 text-rose-500' : ''}/>
                     <span className="font-semibold text-sm">{post.likesCount || 0}</span>
                   </button>
                   <button onClick={() => navigate(`/posts/${post._id}/comments`)} className="flex items-center gap-1.5 hover:text-blue-500 transition-colors">

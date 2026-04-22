@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import Post from '../models/Post';
 import Chunk from '../models/Chunk';
+import Like from '../models/Like';
 import { AuthRequest } from '../middleware/auth';
 import { generateEmbedding, chunkText, cosineSimilarity } from '../services/aiService';
 
@@ -43,8 +44,22 @@ export const getFeed = async (req: AuthRequest, res: Response) => {
     const limit = parseInt(req.query.limit as string) || 10;
     const skip = (page - 1) * limit;
 
-    const posts = await Post.find().sort({ createdAt: -1 }).skip(skip).limit(limit).populate('author', 'name profilePic');
-    res.json(posts);
+    const posts = await Post.find().sort({ createdAt: -1 }).skip(skip).limit(limit).populate('author', 'name profilePic').lean();
+    
+    let likedPostIds = new Set<string>();
+    const userId = req.user?._id;
+    if (userId) {
+      const postIds = posts.map(p => p._id);
+      const likes = await Like.find({ userId, postId: { $in: postIds } });
+      likedPostIds = new Set(likes.map(l => l.postId.toString()));
+    }
+
+    const postsWithLike = posts.map(p => ({
+      ...p,
+      isLiked: likedPostIds.has(p._id.toString())
+    }));
+
+    res.json(postsWithLike);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error });
   }
@@ -143,13 +158,24 @@ export const smartSearch = async (req: AuthRequest, res: Response) => {
     }
 
     // Sort posts to match search priority
-    const sortedPosts = posts.sort((a, b) => {
+    const sortedPostsObj = posts.sort((a, b) => {
       const indexA = matchedDocIds.indexOf(a._id.toString());
       const indexB = matchedDocIds.indexOf(b._id.toString());
       return indexA - indexB;
-    }).map(post => ({
-      ...post.toObject(),
-      similarity: similarityMap.get(post._id.toString()) ?? 0
+    }).map(post => post.toObject());
+
+    let likedPostIds = new Set<string>();
+    const userId = req.user?._id;
+    if (userId) {
+      const postIds = sortedPostsObj.map(p => p._id);
+      const likes = await Like.find({ userId, postId: { $in: postIds } });
+      likedPostIds = new Set(likes.map(l => l.postId.toString()));
+    }
+
+    const sortedPosts = sortedPostsObj.map(post => ({
+      ...post,
+      similarity: similarityMap.get(post._id.toString()) ?? 0,
+      isLiked: likedPostIds.has(post._id.toString())
     }));
 
     res.json(sortedPosts);
