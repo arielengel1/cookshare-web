@@ -49,6 +49,7 @@ export const getFeed = async (req: AuthRequest, res: Response) => {
     const limit = parseInt(req.query.limit as string) || 10;
     const skip = (page - 1) * limit;
     const sortParam = req.query.sort as string || 'newest';
+    const category = req.query.category as string;
 
     let sortOption: any = { createdAt: -1 };
     if (sortParam === 'oldest') {
@@ -57,7 +58,19 @@ export const getFeed = async (req: AuthRequest, res: Response) => {
       sortOption = { likesCount: -1, createdAt: -1 };
     }
 
-    const posts = await Post.find().sort(sortOption).skip(skip).limit(limit).populate('author', 'name profilePic').lean();
+    let filterOption: any = {};
+    if (category) {
+      filterOption = {
+        $or: [
+          { title: { $regex: category, $options: 'i' } },
+          { description: { $regex: category, $options: 'i' } },
+          { ingredients: { $regex: category, $options: 'i' } },
+          { text: { $regex: category, $options: 'i' } }
+        ]
+      };
+    }
+
+    const posts = await Post.find(filterOption).sort(sortOption).skip(skip).limit(limit).populate('author', 'name profilePic').lean();
     
     let likedPostIds = new Set<string>();
     const userId = req.user?._id;

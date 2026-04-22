@@ -1,5 +1,6 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { FiHome, FiSearch, FiPlusSquare, FiUser } from 'react-icons/fi';
+import RightSidebar from './RightSidebar';
 
 const Layout = () => {
   const location = useLocation();
@@ -47,6 +48,8 @@ const Layout = () => {
           <Outlet />
         </div>
       </main>
+
+      <RightSidebar />
 
       {/* Bottom Navigation (Mobile) */}
       <nav className="md:hidden fixed bottom-0 w-full bg-white border-t border-gray-200 flex justify-around items-center p-3 z-20 pb-safe">

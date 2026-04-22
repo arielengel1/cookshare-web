@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import axiosClient from '../api/axiosClient';
 import { FiHeart, FiMessageCircle } from 'react-icons/fi';
 import { formatDistanceToNow } from 'date-fns';
@@ -9,11 +9,13 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const [sortMode, setSortMode] = useState('newest');
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const category = searchParams.get('category');
 
   const fetchPosts = async () => {
     setLoading(true);
     try {
-      const { data } = await axiosClient.get(`/posts/feed?limit=20&sort=${sortMode}`);
+      const { data } = await axiosClient.get(`/posts/feed?limit=20&sort=${sortMode}${category ? `&category=${category}` : ''}`);
       setPosts(data);
     } catch (error) {
       console.error('Error fetching feed', error);
@@ -24,7 +26,7 @@ const Home = () => {
 
   useEffect(() => {
     fetchPosts();
-  }, [sortMode]);
+  }, [sortMode, category]);
 
   const handleLike = async (postId: string) => {
     try {
@@ -42,7 +44,9 @@ const Home = () => {
   return (
     <div className="pb-8">
       <div className="p-4 pb-0 flex justify-between items-center mt-2">
-        <h2 className="font-extrabold text-2xl tracking-tight text-gray-800 pl-2">Feed</h2>
+        <h2 className="font-extrabold text-2xl tracking-tight text-gray-800 pl-2">
+          Feed {category && <span className="text-rose-500 text-lg ml-2 bg-rose-50 px-3 py-1 rounded-full border border-rose-100"># {category}</span>}
+        </h2>
         <select
           value={sortMode}
           onChange={(e) => setSortMode(e.target.value)}

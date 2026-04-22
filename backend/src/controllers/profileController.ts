@@ -90,3 +90,19 @@ export const getLikedPosts = async (req: AuthRequest, res: Response) => {
     res.status(500).json({ message: 'Server error', error });
   }
 };
+
+export const getTopChefs = async (req: AuthRequest, res: Response) => {
+  try {
+    const topChefs = await Post.aggregate([
+      { $group: { _id: '$author', totalLikes: { $sum: '$likesCount' } } },
+      { $sort: { totalLikes: -1 } },
+      { $limit: 5 },
+      { $lookup: { from: 'users', localField: '_id', foreignField: '_id', as: 'user' } },
+      { $unwind: '$user' },
+      { $project: { _id: 1, totalLikes: 1, name: '$user.name', profilePic: '$user.profilePic' } }
+    ]);
+    res.json(topChefs);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error });
+  }
+};
