@@ -91,9 +91,28 @@ const Search = () => {
                     <span className="font-semibold text-sm">{post.commentsCount || 0}</span>
                   </button>
                 </div>
-               <div className="text-sm">
-                 <span className="font-bold mr-2">{post.author?.name || 'Unknown'}</span>
-                 <span className="text-gray-800">{post.text}</span>
+                <div className="text-sm">
+                 {post.title && <h3 className="font-extrabold text-lg text-black-500 mb-2">{post.title}</h3>}
+                 
+                 {(post.description || post.text) && (
+                   <p className="text-gray-600 mb-2 whitespace-pre-wrap leading-relaxed">
+                     {post.description || post.text}
+                   </p>
+                 )}
+                 
+                 {post.ingredients && (
+                   <div className="bg-rose-50 p-3 rounded-xl mb-2 border border-rose-100">
+                     <h4 className="font-bold text-gray-800 mb-1">Ingredients</h4>
+                     <p className="whitespace-pre-wrap leading-relaxed">{post.ingredients}</p>
+                   </div>
+                 )}
+                 
+                 {post.instructions && (
+                   <div className="bg-gray-50 p-3 rounded-xl mb-2 border border-gray-100">
+                     <h4 className="font-bold text-gray-800 mb-1">Instructions</h4>
+                     <p className="whitespace-pre-wrap leading-relaxed">{post.instructions}</p>
+                   </div>
+                 )}
                </div>
              </div>
            </div>

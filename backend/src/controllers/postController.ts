@@ -7,11 +7,15 @@ import { generateEmbedding, chunkText, cosineSimilarity } from '../services/aiSe
 
 export const createPost = async (req: AuthRequest, res: Response) => {
   try {
-    const { text } = req.body;
+    const { title, description, ingredients, instructions, text } = req.body;
     let image = req.file?.filename;
 
     const post = new Post({
       author: req.user?._id,
+      title,
+      description,
+      ingredients,
+      instructions,
       text,
       image,
     });
@@ -19,9 +23,10 @@ export const createPost = async (req: AuthRequest, res: Response) => {
 
     // AI Indexing
     let embeddingWarning = false;
-    if (text) {
+    const aiTextPayload = [title, description, ingredients, instructions, text].filter(Boolean).join('\n\n');
+    if (aiTextPayload) {
       try {
-        const chunks = chunkText(text);
+        const chunks = chunkText(aiTextPayload);
         const embeddings = await Promise.all(chunks.map(c => generateEmbedding(c, 'RETRIEVAL_DOCUMENT')));
         const docs = chunks
           .map((t, i) => ({ docId: post._id.toString(), chunkIndex: i, text: t, embedding: embeddings[i] }))
@@ -76,22 +81,28 @@ export const getFeed = async (req: AuthRequest, res: Response) => {
 export const updatePost = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const { text } = req.body;
+    const { title, description, ingredients, instructions, text } = req.body;
     
     const post = await Post.findById(id);
     if (!post) return res.status(404).json({ message: 'Post not found' });
     if (post.author.toString() !== req.user?._id) return res.status(403).json({ message: 'Unauthorized' });
 
     post.text = text || post.text;
+    if (title !== undefined) post.title = title;
+    if (description !== undefined) post.description = description;
+    if (ingredients !== undefined) post.ingredients = ingredients;
+    if (instructions !== undefined) post.instructions = instructions;
+    
     if (req.file?.filename) post.image = req.file.filename;
     await post.save();
 
     // Re-index AI Chunks
     let embeddingWarning = false;
-    if (text) {
+    const aiTextPayload = [title, description, ingredients, instructions, text].filter(Boolean).join('\n\n');
+    if (aiTextPayload) {
       try {
         await Chunk.deleteMany({ docId: post._id.toString() });
-        const chunks = chunkText(text);
+        const chunks = chunkText(aiTextPayload);
         const embeddings = await Promise.all(chunks.map(c => generateEmbedding(c, 'RETRIEVAL_DOCUMENT')));
         const docs = chunks
           .map((t, i) => ({ docId: post._id.toString(), chunkIndex: i, text: t, embedding: embeddings[i] }))

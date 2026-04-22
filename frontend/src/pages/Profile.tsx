@@ -11,7 +11,13 @@ const Profile = () => {
   const [newName, setNewName] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [editingPost, setEditingPost] = useState<any>(null);
+  
   const [editingPostText, setEditingPostText] = useState('');
+  const [editingPostTitle, setEditingPostTitle] = useState('');
+  const [editingPostDescription, setEditingPostDescription] = useState('');
+  const [editingPostIngredients, setEditingPostIngredients] = useState('');
+  const [editingPostInstructions, setEditingPostInstructions] = useState('');
+
   const [editingPostImage, setEditingPostImage] = useState<File | null>(null);
   const [deletingPost, setDeletingPost] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<'posts'|'likes'>('posts');
@@ -84,10 +90,15 @@ const Profile = () => {
   };
 
   const handleUpdatePost = async () => {
-    if (!editingPost || !editingPostText.trim()) return;
+    if (!editingPost) return;
     try {
       const formData = new FormData();
-      formData.append('text', editingPostText);
+      if (editingPostText.trim()) formData.append('text', editingPostText);
+      formData.append('title', editingPostTitle);
+      formData.append('description', editingPostDescription);
+      formData.append('ingredients', editingPostIngredients);
+      formData.append('instructions', editingPostInstructions);
+
       if (editingPostImage) {
         formData.append('image', editingPostImage);
       }
@@ -95,7 +106,7 @@ const Profile = () => {
       const { data } = await axiosClient.put(`/posts/${editingPost._id}`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-      setPosts(posts.map(p => p._id === editingPost._id ? { ...p, text: data.text, image: data.image } : p));
+      setPosts(posts.map(p => p._id === editingPost._id ? { ...p, ...data } : p));
       setEditingPost(null);
       setEditingPostImage(null);
       showSuccess('Recipe updated!');
@@ -132,7 +143,7 @@ const Profile = () => {
   if (!profile) return <div className="p-10 text-center text-gray-400">Loading profile...</div>;
 
   return (
-    <div className="bg-white min-h-screen">
+    <div className="bg-white min-h-screen pb-safe">
       <div className="p-6 flex flex-col items-center border-b border-gray-100 bg-gray-50">
         <input 
           type="file" 
@@ -198,11 +209,21 @@ const Profile = () => {
               {post.image ? (
                 <img src={`${import.meta.env.VITE_API_URL}/uploads/${post.image}`} alt="Post" className="w-full h-full object-cover" />
               ) : (
-                 <div className="w-full h-full flex items-center justify-center p-2 text-xs text-center text-gray-500 leading-tight bg-white border border-gray-100">{post.text.substring(0, 50)}...</div>
+                 <div className="w-full h-full flex items-center justify-center p-4 text-xs text-center text-gray-500 leading-tight bg-white border border-gray-100 overflow-hidden break-words">
+                   <span className="line-clamp-4 font-semibold text-gray-700">{post.title || post.text || post.description || 'Recipe'}</span>
+                 </div>
               )}
               
               <div className="absolute inset-0 bg-black/30 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
-                <button onClick={() => { setEditingPost(post); setEditingPostText(post.text); setEditingPostImage(null); }} className="p-2 bg-white rounded-full text-blue-500 hover:scale-110 transition-transform">
+                <button onClick={() => { 
+                  setEditingPost(post); 
+                  setEditingPostText(post.text || ''); 
+                  setEditingPostTitle(post.title || '');
+                  setEditingPostDescription(post.description || '');
+                  setEditingPostIngredients(post.ingredients || '');
+                  setEditingPostInstructions(post.instructions || '');
+                  setEditingPostImage(null); 
+                }} className="p-2 bg-white rounded-full text-blue-500 hover:scale-110 transition-transform">
                   <FiEdit size={18} />
                 </button>
                 <button onClick={() => setDeletingPost(post)} className="p-2 bg-white rounded-full text-rose-500 hover:scale-110 transition-transform">
@@ -241,8 +262,8 @@ const Profile = () => {
 
       {/* Edit Recipe Modal */}
       {editingPost && (
-        <div className="fixed inset-0 bg-gray-900/20 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all">
-          <div className="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl">
+        <div className="fixed inset-0 bg-gray-900/20 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all py-10">
+          <div className="bg-white rounded-3xl w-full max-w-md p-6 shadow-2xl max-h-full overflow-y-auto">
             <h3 className="font-bold text-lg mb-4 tracking-tight">Edit Recipe</h3>
             
             <div className="mb-4">
@@ -277,12 +298,41 @@ const Profile = () => {
               />
             </div>
 
+            {(!editingPost.title && !editingPost.ingredients && editingPost.text) && (
+              <textarea 
+                className="w-full bg-gray-50 border border-gray-200 rounded-2xl p-4 min-h-[120px] focus:outline-none focus:ring-2 focus:ring-rose-400 text-sm resize-none mb-3"
+                value={editingPostText}
+                onChange={e => setEditingPostText(e.target.value)}
+                placeholder="Legacy Recipe Text..."
+              />
+            )}
+            
+            <input 
+              type="text"
+              placeholder="Recipe Title" 
+              value={editingPostTitle}
+              onChange={(e) => setEditingPostTitle(e.target.value)}
+              className="w-full p-4 rounded-2xl bg-gray-50 border border-gray-200 focus:ring-2 focus:ring-rose-400 outline-none font-bold text-lg mb-3"
+            />
+            <textarea 
+              className="w-full bg-gray-50 border border-gray-200 rounded-2xl p-4 min-h-[80px] focus:outline-none focus:ring-2 focus:ring-rose-400 text-sm resize-none mb-3"
+              value={editingPostDescription}
+              onChange={e => setEditingPostDescription(e.target.value)}
+              placeholder="Short Description..."
+            />
+            <textarea 
+              className="w-full bg-gray-50 border border-gray-200 rounded-2xl p-4 min-h-[100px] focus:outline-none focus:ring-2 focus:ring-rose-400 text-sm resize-none mb-3"
+              value={editingPostIngredients}
+              onChange={e => setEditingPostIngredients(e.target.value)}
+              placeholder="Ingredients..."
+            />
             <textarea 
               className="w-full bg-gray-50 border border-gray-200 rounded-2xl p-4 min-h-[120px] focus:outline-none focus:ring-2 focus:ring-rose-400 text-sm resize-none"
-              value={editingPostText}
-              onChange={e => setEditingPostText(e.target.value)}
-              placeholder="What's your recipe?"
+              value={editingPostInstructions}
+              onChange={e => setEditingPostInstructions(e.target.value)}
+              placeholder="Instructions..."
             />
+
             <div className="flex gap-3 justify-end mt-5">
               <button 
                 onClick={() => { setEditingPost(null); setEditingPostImage(null); }} 

@@ -90,8 +90,26 @@ const Home = () => {
                   </button>
                 </div>
                 <div className="text-sm">
-                  <span className="font-bold mr-2">{post.author?.name || 'User'}</span>
-                  <span className="text-gray-800 leading-relaxed">{post.text}</span>
+                  {post.title ? (
+                    <div className="mt-2 text-gray-800 flex flex-col gap-2">
+                       <h3 className="font-extrabold text-lg text-black-500 block">{post.title}</h3>
+                       {post.description && <p className="text-gray-600 block">{post.description}</p>}
+                       {post.ingredients && (
+                         <div className="bg-rose-50 p-3 rounded-xl mt-2 border border-rose-100">
+                           <h4 className="font-bold text-gray-800 mb-1">Ingredients</h4>
+                           <p className="whitespace-pre-wrap leading-relaxed">{post.ingredients}</p>
+                         </div>
+                       )}
+                       {post.instructions && (
+                         <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
+                           <h4 className="font-bold text-gray-800 mb-1">Instructions</h4>
+                           <p className="whitespace-pre-wrap leading-relaxed">{post.instructions}</p>
+                         </div>
+                       )}
+                    </div>
+                  ) : (
+                    <span className="text-gray-800 leading-relaxed">{post.text}</span>
+                  )}
                 </div>
               </div>
             </div>
