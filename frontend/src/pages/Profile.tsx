@@ -219,7 +219,7 @@ const Profile = () => {
                   setEditingPost(post); 
                   setEditingPostText(post.text || ''); 
                   setEditingPostTitle(post.title || '');
-                  setEditingPostDescription(post.description || '');
+                  setEditingPostDescription(post.description || post.text || '');
                   setEditingPostIngredients(post.ingredients || '');
                   setEditingPostInstructions(post.instructions || '');
                   setEditingPostImage(null); 
@@ -298,14 +298,7 @@ const Profile = () => {
               />
             </div>
 
-            {(!editingPost.title && !editingPost.ingredients && editingPost.text) && (
-              <textarea 
-                className="w-full bg-gray-50 border border-gray-200 rounded-2xl p-4 min-h-[120px] focus:outline-none focus:ring-2 focus:ring-rose-400 text-sm resize-none mb-3"
-                value={editingPostText}
-                onChange={e => setEditingPostText(e.target.value)}
-                placeholder="Legacy Recipe Text..."
-              />
-            )}
+
             
             <input 
               type="text"
