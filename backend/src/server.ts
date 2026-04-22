@@ -18,7 +18,9 @@ const HTTPS_PORT =  process.env.HTTPS_PORT || 443;
 app.use(cors());
 app.use(express.json());
 app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  const methodMap: Record<string, string> = { GET: '\x1b[32m', POST: '\x1b[33m', PUT: '\x1b[34m', DELETE: '\x1b[31m' };
+  const color = methodMap[req.method] || '\x1b[37m';
+  console.log(`\x1b[90m[${new Date().toISOString()}]\x1b[0m ${color}${req.method}\x1b[0m \x1b[36m${req.url}\x1b[0m`);
   next();
 });
 app.use("/api/uploads", express.static(path.join(__dirname, '..', 'uploads')));

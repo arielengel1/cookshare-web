@@ -122,40 +122,53 @@ export const smartSearch = async (req: AuthRequest, res: Response) => {
     if (!query || typeof query !== 'string') return res.status(400).json({ message: 'Query required' });
 
     let queryEmbedding: number[] | null = null;
+    let embeddingsFailed = false;
     try {
       queryEmbedding = await generateEmbedding(query, 'RETRIEVAL_QUERY');
     } catch (embErr: any) {
-      return res.status(500).json({
-        message: 'Failed to generate embedding',
-        error: embErr?.message || String(embErr),
-        details: embErr?.errorDetails || embErr?.status || undefined,
-      });
+      console.error(`\x1b[31m[AI Search]\x1b[0m Failed to generate embedding:`, embErr?.message);
+      embeddingsFailed = true;
     }
-    if (!queryEmbedding) return res.status(500).json({ message: 'Failed to generate embedding' });
-
-    const allChunks = await Chunk.find({ embedding: { $exists: true, $ne: [] } }, { docId: 1, embedding: 1 }).lean();
     
-    // Calculate similarities
-    const results = allChunks.map(chunk => ({
-      docId: chunk.docId,
-      similarity: cosineSimilarity(queryEmbedding, chunk.embedding)
-    }))
-    .sort((a, b) => b.similarity - a.similarity)
-    .filter(res => res.similarity > 0.4)
-    .slice(0, 10);
+    if (!queryEmbedding) {
+      console.log(`\x1b[33m[AI Search]\x1b[0m queryEmbedding is null. Falling back to text search...`);
+      embeddingsFailed = true;
+    }
 
-    // Get unique matched post IDs
-    const matchedDocIds = [...new Set(results.map(r => r.docId))];
-    const posts = await Post.find({ _id: { $in: matchedDocIds } }).populate('author', 'name profilePic');
-    
-    // Build a map from docId to best similarity score
+    let matchedDocIds: string[] = [];
     const similarityMap = new Map<string, number>();
-    for (const r of results) {
-      const existing = similarityMap.get(r.docId.toString());
-      if (existing === undefined || r.similarity > existing) {
-        similarityMap.set(r.docId.toString(), r.similarity);
+
+    if (!embeddingsFailed && queryEmbedding) {
+      const allChunks = await Chunk.find({ embedding: { $exists: true, $ne: [] } }, { docId: 1, embedding: 1 }).lean();
+      
+      const results = allChunks.map(chunk => ({
+        docId: chunk.docId.toString(),
+        similarity: cosineSimilarity(queryEmbedding, chunk.embedding)
+      })).sort((a, b) => b.similarity - a.similarity);
+
+      const filteredResults = results.filter(res => res.similarity > 0.15).slice(0, 10);
+      matchedDocIds = [...new Set(filteredResults.map(r => r.docId))];
+      
+      for (const r of filteredResults) {
+        const existing = similarityMap.get(r.docId);
+        if (existing === undefined || r.similarity > existing) {
+          similarityMap.set(r.docId, r.similarity);
+        }
       }
     }
+
+    // Fallback or union with regex text search
+    console.log(`\x1b[35m[Text Search]\x1b[0m Running regex fallback...`);
+    const regexResults = await Post.find({ text: { $regex: query, $options: 'i' } }, { _id: 1 }).lean();
+    for (const p of regexResults) {
+      const pid = p._id.toString();
+      if (!matchedDocIds.includes(pid)) {
+        matchedDocIds.push(pid);
+        similarityMap.set(pid, 1.0); // Arbitrary score for regex match
+      }
+    }
+
+    const posts = await Post.find({ _id: { $in: matchedDocIds } }).populate('author', 'name profilePic');
 
     // Sort posts to match search priority
     const sortedPostsObj = posts.sort((a, b) => {
