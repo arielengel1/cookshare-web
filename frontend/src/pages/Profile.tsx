@@ -145,7 +145,7 @@ const Profile = () => {
           <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-rose-400 to-orange-400 p-[3px]">
             <img src={profile.profilePic ? `${import.meta.env.VITE_API_URL}/uploads/${profile.profilePic}` : 'https://via.placeholder.com/150'} alt="Profile" className="w-full h-full rounded-full object-cover border-4 border-white bg-white" />
           </div>
-          <div className="absolute inset-0 bg-black bg-opacity-40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
             <FiEdit2 className="text-white" size={24} />
           </div>
         </div>
