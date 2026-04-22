@@ -7,11 +7,13 @@ import { formatDistanceToNow } from 'date-fns';
 const Home = () => {
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sortMode, setSortMode] = useState('newest');
   const navigate = useNavigate();
 
   const fetchPosts = async () => {
+    setLoading(true);
     try {
-      const { data } = await axiosClient.get('/posts/feed?limit=20');
+      const { data } = await axiosClient.get(`/posts/feed?limit=20&sort=${sortMode}`);
       setPosts(data);
     } catch (error) {
       console.error('Error fetching feed', error);
@@ -22,7 +24,7 @@ const Home = () => {
 
   useEffect(() => {
     fetchPosts();
-  }, []);
+  }, [sortMode]);
 
   const handleLike = async (postId: string) => {
     try {
@@ -39,6 +41,19 @@ const Home = () => {
 
   return (
     <div className="pb-8">
+      <div className="p-4 pb-0 flex justify-between items-center mt-2">
+        <h2 className="font-extrabold text-2xl tracking-tight text-gray-800 pl-2">Feed</h2>
+        <select
+          value={sortMode}
+          onChange={(e) => setSortMode(e.target.value)}
+          className="bg-white shadow-sm border border-gray-200 rounded-xl px-4 py-2 text-sm font-bold text-gray-700 outline-none focus:ring-2 focus:ring-rose-400 cursor-pointer"
+        >
+          <option value="newest">Newest First</option>
+          <option value="oldest">Oldest First</option>
+          <option value="popular">Most Popular</option>
+        </select>
+      </div>
+
       {loading ? (
         <div className="flex justify-center p-10"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-rose-500"></div></div>
       ) : posts.length === 0 ? (
