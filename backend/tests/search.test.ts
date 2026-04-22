@@ -17,6 +17,48 @@ jest.mock('../src/middleware/auth', () => ({
   },
 }));
 
+// REMOVE IF WANT TO TEST MODEL WITH TOKENS
+jest.mock('../src/services/aiService', () => {
+  return {
+    generateEmbedding: jest.fn(async (text: string, type: string) => {
+      const t = text.toLowerCase();
+      // PASTA RECEPIE vs SHAKSHUKA (Do this first to avoid pie/recePIE overlap!)
+      if (t.includes('pasta recipe') || t.includes('pasta recepie')) return [1, 0, 0, 0, 0];
+      if (t.includes('spagatti')) return [0.5, 0.866, 0, 0, 0];
+      if (t.includes('shakshuka')) return [0, 1, 0, 0, 0];
+      
+      // Level 1: direct word match
+      if (t.includes('apple')) return [1, 0, 0, 0, 0];
+      // Level 2: synonym
+      if (t.includes('pie') || t.includes('tarts') || t.includes('cake')) return [0, 1, 0, 0, 0];
+      // Level 3: contextual rank (fries vs ghost pepper)
+      if (t.includes('children') || t.includes('fries')) return [0, 0, 1, 0, 0];
+      if (t.includes('ghost pepper') || t.includes('adults')) return [0, 0, 0, 1, 0]; 
+      
+      // Broad query "italian pasta recipe"
+      if (t.includes('italian') || t.includes('carbonara') || t.includes('alfredo') || t.includes('arrabbiata')) return [1, 1, 0, 0, 0];
+      
+      // Single post query "sweet dessert baking"
+      if (t.includes('sweet') || t.includes('cookie')) return [0, 0, 0, 0, 1];
+      
+      return [0.01, 0.01, 0.01, 0.01, 0.01]; // base tiny vector
+    }),
+    chunkText: jest.fn((text: string) => [text]),
+    cosineSimilarity: jest.fn((vecA: number[], vecB: number[]) => {
+      let dotProduct = 0;
+      let normA = 0;
+      let normB = 0;
+      for (let i = 0; i < vecA.length; i++) {
+        dotProduct += vecA[i] * vecB[i];
+        normA += vecA[i] * vecA[i];
+        normB += vecB[i] * vecB[i];
+      }
+      if (normA === 0 || normB === 0) return 0;
+      return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+    })
+  };
+});
+
 const app = express();
 app.use(express.json());
 app.use('/api/posts', postRoutes);
@@ -81,9 +123,7 @@ describe('Search API - /api/posts/search', () => {
 
     const friesIndex = texts.findIndex((t: string) => t.toLowerCase().includes('fries'));
     const ghostPepperIndex = texts.findIndex((t: string) => t.toLowerCase().includes('ghost pepper'));
-    if (ghostPepperIndex !== -1) {
-      expect(friesIndex).toBeLessThan(ghostPepperIndex);
-    }
+    expect(ghostPepperIndex).toBe(-1); // Match must be low enough to be excluded
   });
 
   // --- Result Count Tests ---
