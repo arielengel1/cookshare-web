@@ -10,7 +10,7 @@
     "prod": "cp .env.prod .env && cd ../frontend && npm run build && cd ../backend && tsc -p tsconfig_prod.json && rm -rf dist/public && cp -r ../frontend/dist dist/public && pm2 restart ecosystem.config.js --env production",
     "prod_cmd": "tsc -p tsconfig_prod.json && pm2 restart ecosystem.config.js --env production",
     "seed": "ts-node src/seed.ts",
-    "test": "jest",
+    "test": "jest --runInBand",
     "lint": "eslint src/**/*.ts",
     "format": "prettier --write \"src/**/*.ts\""
   },
@@ -32,7 +32,7 @@
     "@types/bcrypt": "^5.0.2",
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
-    "@types/jest": "^29.5.12",
+    "@types/jest": "^29.5.14",
     "@types/jsonwebtoken": "^9.0.6",
     "@types/multer": "^1.4.11",
     "@types/node": "^20.12.11",

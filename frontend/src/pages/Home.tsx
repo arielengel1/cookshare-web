@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import axiosClient from '../api/axiosClient';
 import { FiHeart, FiMessageCircle } from 'react-icons/fi';
 import { formatDistanceToNow } from 'date-fns';
@@ -7,11 +7,15 @@ import { formatDistanceToNow } from 'date-fns';
 const Home = () => {
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sortMode, setSortMode] = useState('newest');
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const category = searchParams.get('category');
 
   const fetchPosts = async () => {
+    setLoading(true);
     try {
-      const { data } = await axiosClient.get('/posts/feed?limit=20');
+      const { data } = await axiosClient.get(`/posts/feed?limit=20&sort=${sortMode}${category ? `&category=${category}` : ''}`);
       setPosts(data);
     } catch (error) {
       console.error('Error fetching feed', error);
@@ -22,14 +26,14 @@ const Home = () => {
 
   useEffect(() => {
     fetchPosts();
-  }, []);
+  }, [sortMode, category]);
 
   const handleLike = async (postId: string) => {
     try {
       const { data } = await axiosClient.post(`/posts/${postId}/likes`);
       setPosts(posts.map(p => {
         if (p._id === postId) {
-          return {...p, likesCount: p.likesCount + (data.liked ? 1 : -1)};
+          return {...p, likesCount: p.likesCount + (data.liked ? 1 : -1), isLiked: data.liked};
         }
         return p;
       }));
@@ -39,6 +43,21 @@ const Home = () => {
 
   return (
     <div className="pb-8">
+      <div className="p-4 pb-0 flex justify-between items-center mt-2">
+        <h2 className="font-extrabold text-2xl tracking-tight text-gray-800 pl-2">
+          Feed {category && <span className="text-rose-500 text-lg ml-2 bg-rose-50 px-3 py-1 rounded-full border border-rose-100"># {category}</span>}
+        </h2>
+        <select
+          value={sortMode}
+          onChange={(e) => setSortMode(e.target.value)}
+          className="bg-white shadow-sm border border-gray-200 rounded-xl px-4 py-2 text-sm font-bold text-gray-700 outline-none focus:ring-2 focus:ring-rose-400 cursor-pointer"
+        >
+          <option value="newest">Newest First</option>
+          <option value="oldest">Oldest First</option>
+          <option value="popular">Most Popular</option>
+        </select>
+      </div>
+
       {loading ? (
         <div className="flex justify-center p-10"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-rose-500"></div></div>
       ) : posts.length === 0 ? (
@@ -66,7 +85,7 @@ const Home = () => {
               <div className="p-4">
                 <div className="flex gap-4 mb-3">
                   <button onClick={() => handleLike(post._id)} className="flex items-center gap-1.5 hover:text-rose-500 transition-colors">
-                    <FiHeart size={24} className={post.likesCount ? 'fill-rose-500 text-rose-500' : ''}/>
+                    <FiHeart size={24} className={post.isLiked ? 'fill-rose-500 text-rose-500' : ''}/>
                     <span className="font-semibold text-sm">{post.likesCount || 0}</span>
                   </button>
                   <button onClick={() => navigate(`/posts/${post._id}/comments`)} className="flex items-center gap-1.5 hover:text-blue-500 transition-colors">
@@ -75,8 +94,27 @@ const Home = () => {
                   </button>
                 </div>
                 <div className="text-sm">
-                  <span className="font-bold mr-2">{post.author?.name || 'User'}</span>
-                  <span className="text-gray-800 leading-relaxed">{post.text}</span>
+                  {post.title && <h3 className="font-extrabold text-lg text-black-500 mb-2">{post.title}</h3>}
+                        
+                  {(post.description || post.text) && (
+                    <p className="text-gray-600 mb-2 whitespace-pre-wrap leading-relaxed">
+                      {post.description || post.text}
+                    </p>
+                  )}
+                  
+                  {post.ingredients && (
+                    <div className="bg-rose-50 p-3 rounded-xl mb-2 border border-rose-100">
+                      <h4 className="font-bold text-gray-800 mb-1">Ingredients</h4>
+                      <p className="whitespace-pre-wrap leading-relaxed">{post.ingredients}</p>
+                    </div>
+                  )}
+                  
+                  {post.instructions && (
+                    <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
+                      <h4 className="font-bold text-gray-800 mb-1">Instructions</h4>
+                      <p className="whitespace-pre-wrap leading-relaxed">{post.instructions}</p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

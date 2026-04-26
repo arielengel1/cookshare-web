@@ -7,6 +7,7 @@ const Search = () => {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   const handleLike = async (postId: string) => {
@@ -27,11 +28,15 @@ const Search = () => {
     if (!query.trim()) return;
     
     setLoading(true);
+    setSearchError(null);
     try {
       const { data } = await axiosClient.get(`/posts/search?query=${encodeURIComponent(query)}`);
       setResults(data);
-    } catch (error) {
-      console.error('Search error', error);
+    } catch (error: any) {
+      const errData = error?.response?.data;
+      const msg = errData?.error || errData?.message || 'שגיאה בחיפוש';
+      const details = errData?.details ? ` (${JSON.stringify(errData.details)})` : '';
+      setSearchError(msg + details);
     } finally {
       setLoading(false);
     }
@@ -56,6 +61,8 @@ const Search = () => {
       <div className="mt-4">
         {loading ? (
           <div className="flex justify-center p-10"><div className="animate-pulse flex space-x-2"><div className="h-3 w-3 bg-rose-400 rounded-full"></div><div className="h-3 w-3 bg-rose-400 rounded-full"></div><div className="h-3 w-3 bg-rose-400 rounded-full"></div></div></div>
+        ) : searchError ? (
+          <div className="text-center p-6 text-red-500 text-sm break-words">{searchError}</div>
         ) : results.length > 0 ? (
           <div className="flex flex-col gap-6">
             <h2 className="font-bold text-gray-700 ml-1">AI Matches</h2>
@@ -84,9 +91,28 @@ const Search = () => {
                     <span className="font-semibold text-sm">{post.commentsCount || 0}</span>
                   </button>
                 </div>
-               <div className="text-sm">
-                 <span className="font-bold mr-2">{post.author?.name || 'Unknown'}</span>
-                 <span className="text-gray-800">{post.text}</span>
+                <div className="text-sm">
+                 {post.title && <h3 className="font-extrabold text-lg text-black-500 mb-2">{post.title}</h3>}
+                 
+                 {(post.description || post.text) && (
+                   <p className="text-gray-600 mb-2 whitespace-pre-wrap leading-relaxed">
+                     {post.description || post.text}
+                   </p>
+                 )}
+                 
+                 {post.ingredients && (
+                   <div className="bg-rose-50 p-3 rounded-xl mb-2 border border-rose-100">
+                     <h4 className="font-bold text-gray-800 mb-1">Ingredients</h4>
+                     <p className="whitespace-pre-wrap leading-relaxed">{post.ingredients}</p>
+                   </div>
+                 )}
+                 
+                 {post.instructions && (
+                   <div className="bg-gray-50 p-3 rounded-xl mb-2 border border-gray-100">
+                     <h4 className="font-bold text-gray-800 mb-1">Instructions</h4>
+                     <p className="whitespace-pre-wrap leading-relaxed">{post.instructions}</p>
+                   </div>
+                 )}
                </div>
              </div>
            </div>

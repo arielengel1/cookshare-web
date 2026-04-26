@@ -13,6 +13,8 @@ const Comments = () => {
 
   useEffect(() => {
     fetchComments();
+    const mainDiv = document.querySelector('main');
+    if (mainDiv) mainDiv.scrollTo({ top: 0, behavior: 'smooth' });
   }, [id]);
 
   const fetchComments = async () => {
@@ -40,8 +42,8 @@ const Comments = () => {
   };
 
   return (
-    <div className="bg-white min-h-screen pb-20">
-      <div className="flex items-center p-4 border-b border-gray-100 sticky top-0 bg-white z-10">
+    <div className="bg-white flex-1 min-h-full relative flex flex-col">
+      <div className="flex items-center p-4 border-b border-gray-100 sticky top-0 bg-white z-10 shrink-0">
         <button onClick={() => navigate(-1)} className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-colors">
           <FiArrowLeft size={24} />
         </button>
@@ -73,7 +75,7 @@ const Comments = () => {
         </div>
       )}
 
-      <div className="fixed bottom-[65px] w-full max-w-md bg-white border-t border-gray-100 p-3 z-20">
+      <div className="mt-auto sticky bottom-[65px] md:bottom-0 w-full bg-white border-t border-gray-100 p-3 z-20">
         <form onSubmit={handlePostComment} className="flex items-center gap-2">
           <input
             type="text"

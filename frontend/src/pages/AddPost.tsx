@@ -5,10 +5,14 @@ import { FiImage, FiUpload } from 'react-icons/fi';
 
 const AddPost = () => {
   const navigate = useNavigate();
-  const [text, setText] = useState('');
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [ingredients, setIngredients] = useState('');
+  const [instructions, setInstructions] = useState('');
   const [image, setImage] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [warnMsg, setWarnMsg] = useState('');
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -20,20 +24,26 @@ const AddPost = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!text && !image) return;
+    if (!title && !description && !image) return;
 
     setLoading(true);
     try {
       const formData = new FormData();
-      formData.append('text', text);
+      if (title.trim()) formData.append('title', title);
+      if (description.trim()) formData.append('description', description);
+      if (ingredients.trim()) formData.append('ingredients', ingredients);
+      if (instructions.trim()) formData.append('instructions', instructions);
       if (image) formData.append('image', image);
 
-      await axiosClient.post('/posts', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
+      const { data } = await axiosClient.post('/posts', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
       });
-      navigate('/');
+      if (data.embeddingWarning) {
+        setWarnMsg('השמירה הצליחה אך עקב בעיה טכנית הפוסט לא יופיע בחיפוש');
+        setTimeout(() => navigate('/'), 3000);
+      } else {
+        navigate('/');
+      }
     } catch (error) {
       console.error('Error creating post', error);
     } finally {
@@ -61,24 +71,49 @@ const AddPost = () => {
         </div>
 
         {/* Recipe Text Input */}
-        <div>
-          <textarea 
-            placeholder="Write your recipe or cooking tips here..." 
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            className="w-full p-4 h-32 rounded-2xl bg-gray-50 border border-gray-200 focus:ring-2 focus:ring-rose-400 outline-none resize-none"
+        <div className="flex flex-col gap-4">
+          <input 
+            type="text"
+            placeholder="Recipe Title" 
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="w-full p-4 rounded-2xl bg-gray-50 border border-gray-200 focus:ring-2 focus:ring-rose-400 outline-none font-bold text-lg"
             required
+          />
+          <textarea 
+            placeholder="Short Description..." 
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            className="w-full p-4 h-24 rounded-2xl bg-gray-50 border border-gray-200 focus:ring-2 focus:ring-rose-400 outline-none resize-none text-sm"
+          />
+          <textarea 
+            placeholder="Ingredients (e.g. 1 cup flour, 2 eggs)" 
+            value={ingredients}
+            onChange={(e) => setIngredients(e.target.value)}
+            className="w-full p-4 h-32 rounded-2xl bg-gray-50 border border-gray-200 focus:ring-2 focus:ring-rose-400 outline-none resize-none text-sm"
+          />
+          <textarea 
+            placeholder="Instructions (Step by Step)" 
+            value={instructions}
+            onChange={(e) => setInstructions(e.target.value)}
+            className="w-full p-4 h-40 rounded-2xl bg-gray-50 border border-gray-200 focus:ring-2 focus:ring-rose-400 outline-none resize-none text-sm"
           />
         </div>
 
         <button 
           type="submit" 
-          disabled={loading || (!text && !image)}
+          disabled={loading || (!title && !description && !image)}
           className="flex items-center justify-center gap-2 w-full py-4 mt-4 font-bold text-white rounded-2xl bg-gradient-to-r from-rose-500 to-orange-400 hover:opacity-90 disabled:opacity-50 transition-opacity shadow-lg shadow-rose-200"
         >
           {loading ? 'Publishing...' : <><FiUpload /> Publish Recipe</>}
         </button>
       </form>
+
+      {warnMsg && (
+        <div className="fixed bottom-[80px] left-1/2 -translate-x-1/2 bg-gray-800 text-white px-4 py-2 rounded-full text-sm font-medium z-50 animate-bounce whitespace-nowrap">
+          {warnMsg}
+        </div>
+      )}
     </div>
   );
 };
