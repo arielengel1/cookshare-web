@@ -18,50 +18,50 @@ jest.mock('../src/middleware/auth', () => ({
 }));
 
 // REMOVE IF WANT TO TEST MODEL WITH TOKENS
-jest.mock('../src/services/aiService', () => {
-  return {
-    generateEmbedding: jest.fn(async (text: string) => {
-      const t = text.toLowerCase();
-      let vec = Array(20).fill(0.01);
+// jest.mock('../src/services/aiService', () => {
+//   return {
+//     generateEmbedding: jest.fn(async (text: string) => {
+//       const t = text.toLowerCase();
+//       let vec = Array(20).fill(0.01);
       
-      // Multi-dimensional mock semantics mapping
-      if (t.includes('pizza') || t.includes('margherita')) vec[0] = 1;
-      if (t.includes('healthy') || t.includes('vegetarian') || t.includes('lentil') || t.includes('stew')) vec[1] = 1;
-      if (t.includes('fish') || t.includes('seafood') || t.includes('salmon')) vec[2] = 1;
-      if (t.includes('sweet') || t.includes('chocolate') || t.includes('tiramisu') || t.includes('dessert')) vec[3] = 1;
-      if (t.includes('breakfast') || t.includes('morning') || t.includes('pancakes')) vec[4] = 1;
-      if (t.includes('spicy') || t.includes('heat') || t.includes('curry') || t.includes('jalapeño')) vec[5] = 1;
-      if (t.includes('italian') || t.includes('pasta') || t.includes('rice') || t.includes('risotto') || t.includes('pizza')) vec[6] = 1;
-      if (t.includes('asian') || t.includes('noodle') || t.includes('pad thai') || t.includes('sushi')) vec[7] = 1;
-      if (t.includes('summer') || t.includes('drink') || t.includes('smoothie')) vec[8] = 1;
-      if (t.includes('dip') || t.includes('spread') || t.includes('hummus')) vec[9] = 1;
-      if (t.includes('slow') || t.includes('meat') || t.includes('ribs') || t.includes('beef')) vec[10] = 1;
-      if (t.includes('street') || t.includes('wrap') || t.includes('gyros') || t.includes('tacos')) vec[11] = 1;
-      if (t.includes('vegetable') || t.includes('soup') || t.includes('stew') || t.includes('onion')) vec[12] = 1;
-      if (t.includes('egg') || t.includes('brunch') || t.includes('toast') || t.includes('pancake')) vec[13] = 1;
-      if (t.includes('baked') || t.includes('pastry') || t.includes('cheese') || t.includes('spanakopita') || t.includes('pizza')) vec[14] = 1;
-      if (t.includes('children') || t.includes('chicken') || t.includes('pizza') || t.includes('pancakes')) vec[15] = 1;
-      if (t.includes('grilled') || t.includes('outdoor') || t.includes('salmon') || t.includes('ribs')) vec[16] = 1;
-      if (t.includes('creamy') || t.includes('comfort') || t.includes('risotto') || t.includes('soup')) vec[17] = 1;
-      if (t.includes('raw') || t.includes('fresh') || t.includes('salad')) vec[18] = 1;
+//       // Multi-dimensional mock semantics mapping
+//       if (t.includes('pizza') || t.includes('margherita')) vec[0] = 1;
+//       if (t.includes('healthy') || t.includes('vegetarian') || t.includes('lentil') || t.includes('stew')) vec[1] = 1;
+//       if (t.includes('fish') || t.includes('seafood') || t.includes('salmon')) vec[2] = 1;
+//       if (t.includes('sweet') || t.includes('chocolate') || t.includes('tiramisu') || t.includes('dessert')) vec[3] = 1;
+//       if (t.includes('breakfast') || t.includes('morning') || t.includes('pancakes')) vec[4] = 1;
+//       if (t.includes('spicy') || t.includes('heat') || t.includes('curry') || t.includes('jalapeño')) vec[5] = 1;
+//       if (t.includes('italian') || t.includes('pasta') || t.includes('rice') || t.includes('risotto') || t.includes('pizza')) vec[6] = 1;
+//       if (t.includes('asian') || t.includes('noodle') || t.includes('pad thai') || t.includes('sushi')) vec[7] = 1;
+//       if (t.includes('summer') || t.includes('drink') || t.includes('smoothie')) vec[8] = 1;
+//       if (t.includes('dip') || t.includes('spread') || t.includes('hummus')) vec[9] = 1;
+//       if (t.includes('slow') || t.includes('meat') || t.includes('ribs') || t.includes('beef')) vec[10] = 1;
+//       if (t.includes('street') || t.includes('wrap') || t.includes('gyros') || t.includes('tacos')) vec[11] = 1;
+//       if (t.includes('vegetable') || t.includes('soup') || t.includes('stew') || t.includes('onion')) vec[12] = 1;
+//       if (t.includes('egg') || t.includes('brunch') || t.includes('toast') || t.includes('pancake')) vec[13] = 1;
+//       if (t.includes('baked') || t.includes('pastry') || t.includes('cheese') || t.includes('spanakopita') || t.includes('pizza')) vec[14] = 1;
+//       if (t.includes('children') || t.includes('chicken') || t.includes('pizza') || t.includes('pancakes')) vec[15] = 1;
+//       if (t.includes('grilled') || t.includes('outdoor') || t.includes('salmon') || t.includes('ribs')) vec[16] = 1;
+//       if (t.includes('creamy') || t.includes('comfort') || t.includes('risotto') || t.includes('soup')) vec[17] = 1;
+//       if (t.includes('raw') || t.includes('fresh') || t.includes('salad')) vec[18] = 1;
 
-      return vec;
-    }),
-    chunkText: jest.fn((text: string) => [text]),
-    cosineSimilarity: jest.fn((vecA: number[], vecB: number[]) => {
-      let dotProduct = 0;
-      let normA = 0;
-      let normB = 0;
-      for (let i = 0; i < vecA.length; i++) {
-        dotProduct += vecA[i] * vecB[i];
-        normA += vecA[i] * vecA[i];
-        normB += vecB[i] * vecB[i];
-      }
-      if (normA === 0 || normB === 0) return 0;
-      return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
-    })
-  };
-});
+//       return vec;
+//     }),
+//     chunkText: jest.fn((text: string) => [text]),
+//     cosineSimilarity: jest.fn((vecA: number[], vecB: number[]) => {
+//       let dotProduct = 0;
+//       let normA = 0;
+//       let normB = 0;
+//       for (let i = 0; i < vecA.length; i++) {
+//         dotProduct += vecA[i] * vecB[i];
+//         normA += vecA[i] * vecA[i];
+//         normB += vecB[i] * vecB[i];
+//       }
+//       if (normA === 0 || normB === 0) return 0;
+//       return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+//     })
+//   };
+// });
 
 const app = express();
 app.use(express.json());

@@ -55,3 +55,55 @@ export const cosineSimilarity = (vecA: number[], vecB: number[]): number => {
   if (normA === 0 || normB === 0) return 0;
   return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
 };
+
+// LLM re-ranking: filters embedding results by actual contextual relevance
+export const rerankWithLLM = async (
+  query: string,
+  candidates: { id: string; text: string }[]
+): Promise<string[]> => {
+  if (!candidates.length) return [];
+  if (!aiClient) {
+    try {
+      if (process.env.GEMINI_API_KEY) {
+        aiClient = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      } else {
+        return candidates.map(c => c.id); // fallback: return all
+      }
+    } catch {
+      return candidates.map(c => c.id);
+    }
+  }
+
+  const numbered = candidates.map((c, i) => `${i + 1}. "${c.text}"`).join('\n');
+  const prompt = `You are a search relevance judge for a recipe app.
+
+User query: "${query}"
+
+Candidate results:
+${numbered}
+
+Return ONLY the numbers of results that are genuinely relevant to the query, as a comma-separated list (e.g. "1,3").
+If a result contradicts the query intent (e.g. "adults only" when searching for children, or completely unrelated topics), exclude it.
+If no results are relevant, return "none".`;
+
+  try {
+    const response = await aiClient.models.generateContent({
+      model: 'gemini-2.0-flash',
+      contents: prompt,
+    });
+    const text = response?.text?.trim() || '';
+    
+    if (text.toLowerCase() === 'none') return [];
+    
+    const indices = text.match(/\d+/g);
+    if (!indices) return candidates.map(c => c.id);
+    
+    return indices
+      .map(n => parseInt(n) - 1)
+      .filter(i => i >= 0 && i < candidates.length)
+      .map(i => candidates[i].id);
+  } catch (err: any) {
+    console.error('[LLM Rerank] Failed:', err?.message, err?.status, err?.statusText);
+    return candidates.map(c => c.id); // fallback: return all
+  }
+};

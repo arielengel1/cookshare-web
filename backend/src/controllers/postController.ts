@@ -178,7 +178,7 @@ export const smartSearch = async (req: AuthRequest, res: Response) => {
         similarity: cosineSimilarity(queryEmbedding, chunk.embedding)
       })).sort((a, b) => b.similarity - a.similarity);
 
-      const filteredResults = results.filter(res => res.similarity > 0.15).slice(0, 10);
+      const filteredResults = results.filter(res => res.similarity > 0.60).slice(0, 10);
       matchedDocIds = [...new Set(filteredResults.map(r => r.docId))];
       
       for (const r of filteredResults) {
@@ -209,15 +209,38 @@ export const smartSearch = async (req: AuthRequest, res: Response) => {
       return indexA - indexB;
     }).map(post => post.toObject());
 
+    // Local contradiction filter: removes results that explicitly contradict the query intent.
+    // This runs without API calls — handles cases like "adults only" vs "children".
+    const CONTRADICTION_PAIRS: [string[], string[]][] = [
+      [['children', 'kids', 'child-friendly', 'family'], ['adults only', 'not for children', '18+', 'dangerously']],
+      [['vegan', 'plant-based'], ['meat', 'chicken', 'beef', 'pork', 'lamb', 'fish']],
+      [['gluten-free', 'gluten free'], ['wheat', 'flour', 'bread', 'pasta']],
+      [['dairy-free', 'dairy free'], ['cheese', 'cream', 'milk', 'butter']],
+    ];
+
+    let rerankedPosts = sortedPostsObj;
+    const queryLower = query.toLowerCase();
+    rerankedPosts = sortedPostsObj.filter(p => {
+      const postText = [p.title, p.description, p.text].filter(Boolean).join(' ').toLowerCase();
+      for (const [queryTerms, contradictions] of CONTRADICTION_PAIRS) {
+        const queryMatches = queryTerms.some(term => queryLower.includes(term));
+        if (queryMatches) {
+          const hasContradiction = contradictions.some(c => postText.includes(c));
+          if (hasContradiction) return false;
+        }
+      }
+      return true;
+    });
+
     let likedPostIds = new Set<string>();
     const userId = req.user?._id;
     if (userId) {
-      const postIds = sortedPostsObj.map(p => p._id);
+      const postIds = rerankedPosts.map(p => p._id);
       const likes = await Like.find({ userId, postId: { $in: postIds } });
       likedPostIds = new Set(likes.map(l => l.postId.toString()));
     }
 
-    const sortedPosts = sortedPostsObj.map(post => ({
+    const sortedPosts = rerankedPosts.map(post => ({
       ...post,
       similarity: similarityMap.get(post._id.toString()) ?? 0,
       isLiked: likedPostIds.has(post._id.toString())

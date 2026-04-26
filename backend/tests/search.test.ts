@@ -17,12 +17,13 @@ jest.mock('../src/middleware/auth', () => ({
   },
 }));
 
-// REMOVE IF WANT TO TEST MODEL WITH TOKENS
+// Mock AI service for deterministic unit testing.
+// To test with real Gemini tokens, comment this block and run ai.test.ts instead.
 jest.mock('../src/services/aiService', () => {
   return {
     generateEmbedding: jest.fn(async (text: string, type: string) => {
       const t = text.toLowerCase();
-      // PASTA RECEPIE vs SHAKSHUKA (Do this first to avoid pie/recePIE overlap!)
+      // PASTA RECEPIE vs SHAKSHUKA (must come first to avoid pie/recePIE substring overlap)
       if (t.includes('pasta recipe') || t.includes('pasta recepie')) return [1, 0, 0, 0, 0];
       if (t.includes('spagatti')) return [0.5, 0.866, 0, 0, 0];
       if (t.includes('shakshuka')) return [0, 1, 0, 0, 0];
@@ -31,7 +32,7 @@ jest.mock('../src/services/aiService', () => {
       if (t.includes('apple')) return [1, 0, 0, 0, 0];
       // Level 2: synonym
       if (t.includes('pie') || t.includes('tarts') || t.includes('cake')) return [0, 1, 0, 0, 0];
-      // Level 3: contextual rank (fries vs ghost pepper)
+      // Level 3: contextual rank (fries vs ghost pepper — orthogonal axes = 0 similarity)
       if (t.includes('children') || t.includes('fries')) return [0, 0, 1, 0, 0];
       if (t.includes('ghost pepper') || t.includes('adults')) return [0, 0, 0, 1, 0]; 
       
@@ -55,9 +56,22 @@ jest.mock('../src/services/aiService', () => {
       }
       if (normA === 0 || normB === 0) return 0;
       return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+    }),
+    rerankWithLLM: jest.fn(async (query: string, candidates: { id: string; text: string }[]) => {
+      const q = query.toLowerCase();
+      // Simulate LLM contextual filtering
+      return candidates
+        .filter(c => {
+          const t = c.text.toLowerCase();
+          // Filter out "adults only" content when query mentions children
+          if (q.includes('children') && (t.includes('adults only') || t.includes('dangerously'))) return false;
+          return true;
+        })
+        .map(c => c.id);
     })
   };
 });
+
 
 const app = express();
 app.use(express.json());
