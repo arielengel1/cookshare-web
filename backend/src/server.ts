@@ -38,6 +38,28 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 app.get("/api/health", (_req, res) => res.json({ status: "ok" }));
 
+// Serve coverage report static assets (CSS, JS, sub-pages)
+app.use("/api/coverage/static", express.static(path.join(__dirname, "..", "coverage")));
+
+app.get("/api/coverage", async (_req, res) => {
+  const { exec } = await import("child_process");
+  const reportPath = path.join(__dirname, "..", "coverage", "index.html");
+
+  exec("npx jest --coverage --runInBand", { cwd: path.join(__dirname, "..") }, (error, _stdout, stderr) => {
+    try {
+      // Read the generated HTML report
+      let html = fs.readFileSync(reportPath, "utf-8");
+      // Rewrite relative asset paths so they load from our static mount
+      html = html.replace(/(href|src)="(?!http)([^"]*)"/g, (_match, attr, val) => {
+        return `${attr}="/api/coverage/static/${val}"`;
+      });
+      res.type("html").send(html);
+    } catch {
+      res.status(500).send(`<pre>Failed to generate coverage report.\n\n${stderr}</pre>`);
+    }
+  });
+});
+
 app.use("/api/auth", authRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/posts", postRoutes);

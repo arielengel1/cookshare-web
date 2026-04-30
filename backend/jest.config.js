@@ -4,4 +4,6 @@ module.exports = {
   testEnvironment: 'node',
   testMatch: ['**/**/*.test.ts'],
   setupFiles: ['dotenv/config'],
+  coverageDirectory: 'coverage',
+  coverageReporters: ['json-summary', 'text', 'html'],
 };
